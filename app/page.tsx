@@ -20,7 +20,8 @@ export default function HomePage() {
     if (!created) return null;
     const display = `${origin}/display/${created.roomId}`;
     const host = `${origin}/host/${created.roomId}?token=${created.hostToken}`;
-    return { display, host };
+    const laptop = `${origin}/laptop/${created.roomId}?token=${created.hostToken}`;
+    return { display, host, laptop };
   }, [created, origin]);
 
   async function createGame() {
@@ -67,6 +68,7 @@ export default function HomePage() {
             <div className="link-stack">
               <a href={links.display} target="_blank">Display 열기</a>
               <a href={links.host} target="_blank">Host Controller 열기</a>
+              <a href={links.laptop} target="_blank">Laptop Only 열기</a>
             </div>
             <img
               className="qr"

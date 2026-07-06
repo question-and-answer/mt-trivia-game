@@ -229,6 +229,131 @@ a {
   background: #071225;
 }
 
+.laptop-mode {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: 1fr;
+  background: #06152f;
+  color: #f8fafc;
+}
+
+.laptop-mode.with-controls {
+  grid-template-columns: minmax(0, 1fr) 360px;
+}
+
+.laptop-stage {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 14px;
+  padding: 22px;
+  background:
+    radial-gradient(circle at top left, rgba(250, 204, 21, 0.2), transparent 32%),
+    #06152f;
+}
+
+.laptop-board {
+  gap: 8px;
+}
+
+.laptop-tile {
+  width: 100%;
+  border: 2px solid rgba(250, 204, 21, 0.7);
+  appearance: none;
+}
+
+.laptop-question-card {
+  min-height: 46vh;
+}
+
+.laptop-question-card h2 {
+  font-size: clamp(34px, 5vw, 76px);
+}
+
+.laptop-question-meta {
+  margin: 0;
+  color: #facc15;
+  font-size: clamp(18px, 2vw, 28px);
+  font-weight: 900;
+}
+
+.laptop-winner {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  min-height: 50vh;
+  text-align: center;
+}
+
+.laptop-winner h2 {
+  margin: 0;
+  color: #facc15;
+  font-size: clamp(64px, 10vw, 150px);
+  line-height: 1;
+}
+
+.laptop-winner strong {
+  font-size: clamp(34px, 6vw, 86px);
+}
+
+.laptop-control-toggle {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 30;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.laptop-controls {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+  padding: 14px;
+  border-left: 2px solid #facc15;
+  background: #0b1930;
+}
+
+.laptop-control-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.laptop-control-header strong {
+  color: #facc15;
+  font-size: 20px;
+}
+
+.laptop-control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.laptop-control-grid button,
+.laptop-score-tools button {
+  min-height: 46px;
+  padding: 10px;
+}
+
+.laptop-score-tools {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #10233f;
+}
+
+.laptop-custom-score {
+  grid-template-columns: 1fr auto auto;
+}
+
 .display-screen {
   min-height: 100vh;
   display: grid;
@@ -679,6 +804,25 @@ button.danger {
   }
 
   .final-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1100px) {
+  .laptop-mode.with-controls {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+
+  .laptop-controls {
+    position: relative;
+    height: auto;
+    max-height: 42vh;
+    border-left: 0;
+    border-top: 2px solid #facc15;
+  }
+
+  .laptop-custom-score {
     grid-template-columns: 1fr;
   }
 }
