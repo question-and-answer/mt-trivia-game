@@ -221,6 +221,14 @@ a {
   font-weight: 800;
 }
 
+.editor-preview {
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #071225;
+}
+
 .display-screen {
   min-height: 100vh;
   display: grid;

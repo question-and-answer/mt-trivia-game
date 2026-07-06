@@ -116,10 +116,22 @@ function QuestionQuickEditor({ created, onChange }: { created: CreatedGame; onCh
     setMessage("저장 완료");
   }
 
+  async function chooseImage(file?: File) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setMessage("이미지 파일만 선택할 수 있습니다.");
+      return;
+    }
+    setMessage("이미지 준비 중...");
+    const image = await resizeImage(file, 1600, 0.86);
+    setDraft({ ...draft, image });
+    setMessage("이미지 선택 완료. 저장을 눌러 모든 방에 적용하세요.");
+  }
+
   return (
     <section className="home-editor">
       <h2>문제 빠른 수정</h2>
-      <p>이 방에서만 적용됩니다. 사진은 `public/images`에 넣고 `/images/파일명.jpg`로 적으세요.</p>
+      <p>저장하면 모든 방의 문제 은행에 적용됩니다. 사진은 파일 선택으로 넣거나 `/images/파일명.jpg` 경로를 직접 적을 수 있습니다.</p>
       <div className="editor-layout">
         <div className="editor-list">
           {categories.map((category) => (
@@ -160,6 +172,13 @@ function QuestionQuickEditor({ created, onChange }: { created: CreatedGame; onCh
               <input value={String(draft.image ?? selected.image ?? "")} onChange={(event) => setDraft({ ...draft, image: event.target.value })} placeholder="/images/example.jpg" />
             </label>
             <label>
+              장치에서 사진 선택
+              <input type="file" accept="image/*" onChange={(event) => chooseImage(event.target.files?.[0])} />
+            </label>
+            {String(draft.image ?? selected.image ?? "").startsWith("data:image/") && (
+              <img className="editor-preview" src={String(draft.image ?? selected.image)} alt="선택한 문제 사진 미리보기" />
+            )}
+            <label>
               해설
               <textarea value={String(draft.explanation ?? selected.explanation ?? "")} onChange={(event) => setDraft({ ...draft, explanation: event.target.value })} />
             </label>
@@ -174,4 +193,32 @@ function QuestionQuickEditor({ created, onChange }: { created: CreatedGame; onCh
       </div>
     </section>
   );
+}
+
+function resizeImage(file: File, maxSize: number, quality: number) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("이미지를 읽을 수 없습니다."));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error("이미지를 불러올 수 없습니다."));
+      image.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+        const width = Math.max(1, Math.round(image.width * scale));
+        const height = Math.max(1, Math.round(image.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d");
+        if (!context) {
+          reject(new Error("이미지를 처리할 수 없습니다."));
+          return;
+        }
+        context.drawImage(image, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      image.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
 }

@@ -13,7 +13,7 @@ import {
   updateScore
 } from "@/lib/game";
 import { getQuestion } from "@/lib/questions";
-import { getGame, saveGame } from "@/lib/storage";
+import { getGame, saveGame, saveQuestionBank } from "@/lib/storage";
 import type { GameState, QuestionEvent, Round } from "@/lib/types";
 
 type Context = { params: Promise<{ roomId: string }> };
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest, context: Context) {
     if (!state) return NextResponse.json({ error: "Game not found" }, { status: 404 });
     requireHost(state, token);
 
-    state = reduceAction(state, action, body);
+    state = await reduceAction(state, action, body);
     const saved = await saveGame(state);
     return NextResponse.json({ state: publicState(saved) });
   } catch (error) {
@@ -51,10 +51,10 @@ export async function POST(request: NextRequest, context: Context) {
   }
 }
 
-function reduceAction(state: GameState, action: string, body: Record<string, unknown>): GameState {
+async function reduceAction(state: GameState, action: string, body: Record<string, unknown>): Promise<GameState> {
   if (action === "resetGame") {
     const reset = createInitialGame(state.roomId);
-    return { ...reset, hostToken: state.hostToken };
+    return { ...reset, hostToken: state.hostToken, questions: state.questions };
   }
   if (action === "startPart1") return setRound(state, "part1");
   if (action === "startPart2") return setRound(state, "part2");
@@ -95,9 +95,7 @@ function reduceAction(state: GameState, action: string, body: Record<string, unk
   if (action === "updateQuestion") {
     const questionId = String(body.questionId ?? "");
     const patch = body.question as Record<string, unknown>;
-    return touch({
-      ...state,
-      questions: state.questions.map((question) =>
+    const nextQuestions = state.questions.map((question) =>
         question.id === questionId
           ? {
               ...question,
@@ -109,7 +107,11 @@ function reduceAction(state: GameState, action: string, body: Record<string, unk
               hostNote: String(patch.hostNote ?? question.hostNote ?? "").trim() || undefined
             }
           : question
-      )
+      );
+    await saveQuestionBank(nextQuestions);
+    return touch({
+      ...state,
+      questions: nextQuestions
     });
   }
   if (action === "updateTeams") {

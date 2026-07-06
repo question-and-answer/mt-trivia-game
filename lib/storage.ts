@@ -1,28 +1,35 @@
-import type { GameState } from "./types";
+import type { GameState, Question } from "./types";
 import { questions } from "./questions";
 
 const memory = globalThis as typeof globalThis & {
   mtTriviaGames?: Map<string, GameState>;
+  mtTriviaQuestions?: Question[];
 };
 
 if (!memory.mtTriviaGames) {
   memory.mtTriviaGames = new Map<string, GameState>();
 }
 
+if (!memory.mtTriviaQuestions) {
+  memory.mtTriviaQuestions = questions;
+}
+
 const redisUrl = cleanEnv(process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL);
 const redisToken = cleanEnv(process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN);
 const hasRedis = Boolean(redisUrl && redisToken);
 const key = (roomId: string) => `mt-trivia:${roomId.toUpperCase()}`;
+const questionsKey = "mt-trivia:questions";
 
 export async function getGame(roomId: string): Promise<GameState | null> {
   const normalized = roomId.toUpperCase();
+  const questionBank = await getQuestionBank();
   if (hasRedis) {
     const value = await redisCommand<unknown>(["GET", key(normalized)]);
     if (!value) return null;
-    return normalizeGame(typeof value === "string" ? JSON.parse(value) as GameState : value as GameState);
+    return normalizeGame(typeof value === "string" ? JSON.parse(value) as GameState : value as GameState, questionBank);
   }
   const game = memory.mtTriviaGames!.get(normalized) ?? null;
-  return game ? normalizeGame(game) : null;
+  return game ? normalizeGame(game, questionBank) : null;
 }
 
 export async function saveGame(state: GameState): Promise<GameState> {
@@ -36,11 +43,29 @@ export async function saveGame(state: GameState): Promise<GameState> {
   return next;
 }
 
-function normalizeGame(state: GameState): GameState {
+function normalizeGame(state: GameState, questionBank: Question[]): GameState {
   return {
     ...state,
-    questions: state.questions?.length ? state.questions : questions
+    questions: questionBank
   };
+}
+
+export async function getQuestionBank(): Promise<Question[]> {
+  if (hasRedis) {
+    const value = await redisCommand<unknown>(["GET", questionsKey]);
+    if (!value) return questions;
+    return typeof value === "string" ? JSON.parse(value) as Question[] : value as Question[];
+  }
+  return memory.mtTriviaQuestions ?? questions;
+}
+
+export async function saveQuestionBank(nextQuestions: Question[]): Promise<Question[]> {
+  if (hasRedis) {
+    await redisCommand(["SET", questionsKey, JSON.stringify(nextQuestions)]);
+  } else {
+    memory.mtTriviaQuestions = nextQuestions;
+  }
+  return nextQuestions;
 }
 
 export async function deleteGame(roomId: string) {
