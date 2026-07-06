@@ -1,4 +1,5 @@
 import type { GameState, QuestionEvent, Round, ScoreHistoryItem, Team } from "./types";
+import { questions } from "./questions";
 
 export function makeRoomId() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -19,6 +20,7 @@ export function createInitialGame(roomId = makeRoomId()): GameState {
   return {
     roomId,
     hostToken: makeToken(),
+    questions,
     teams,
     currentTeamIndex: 0,
     currentRound: "setup",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { categories, finalQuestion, getCategoryName, getQuestion, questions } from "@/lib/questions";
+import { categories, finalQuestion, getCategoryName, getQuestion } from "@/lib/questions";
 import type { PublicGameState, QuestionEvent } from "@/lib/types";
 
 const dangerous = new Set(["resetGame", "resetScores", "endGame", "calculateFinalScores"]);
@@ -65,8 +65,8 @@ export default function HostClient({ roomId, initialToken }: { roomId: string; i
     setState(data.state);
   }
 
-  const selected = getQuestion(state?.selectedQuestionId);
-  const opened = getQuestion(state?.openedQuestionId);
+  const selected = state?.questions.find((question) => question.id === state.selectedQuestionId) ?? getQuestion(state?.selectedQuestionId);
+  const opened = state?.questions.find((question) => question.id === state.openedQuestionId) ?? getQuestion(state?.openedQuestionId);
   const current = opened ?? selected;
   const currentPoints = current?.points ?? 0;
   const currentTeam = state?.teams[state.currentTeamIndex];
@@ -75,8 +75,8 @@ export default function HostClient({ roomId, initialToken }: { roomId: string; i
 
   const board = useMemo(() => categories.map((category) => ({
     category,
-    items: questions.filter((question) => question.categoryId === category.id)
-  })), []);
+    items: (state?.questions ?? []).filter((question) => question.categoryId === category.id)
+  })), [state?.questions]);
 
   if (!state) {
     return (
@@ -99,6 +99,15 @@ export default function HostClient({ roomId, initialToken }: { roomId: string; i
           <button onClick={() => act("previousTeam")}>이전 팀</button>
           <button onClick={() => act("nextTeam")}>다음 팀</button>
         </div>
+        <nav className="host-jump-nav" aria-label="Host shortcuts">
+          <a href="#game-status">상태</a>
+          <a href="#question-board">문제</a>
+          <a href="#question-control">공개</a>
+          <a href="#score-control">점수</a>
+          <a href="#event-control">이벤트</a>
+          <a href="#team-control">팀</a>
+          <a href="#final-control">Final</a>
+        </nav>
         {current && (
           <div className="current-question-mini">
             <span>{getCategoryName(current.categoryId)} · {current.points || "FINAL"}점</span>
@@ -120,7 +129,7 @@ export default function HostClient({ roomId, initialToken }: { roomId: string; i
         </section>
       )}
 
-      <section className="host-card">
+      <section className="host-card" id="game-status">
         <h2>게임 상태</h2>
         <div className="button-grid">
           <button onClick={() => act("startPart1")}>Part 1 시작</button>
@@ -130,7 +139,7 @@ export default function HostClient({ roomId, initialToken }: { roomId: string; i
         </div>
       </section>
 
-      <section className="host-card">
+      <section className="host-card" id="question-board">
         <h2>문제 선택</h2>
         <div className="host-board">
           {board.map(({ category, items }) => (
@@ -152,7 +161,7 @@ export default function HostClient({ roomId, initialToken }: { roomId: string; i
         </div>
       </section>
 
-      <section className="host-card">
+      <section className="host-card" id="question-control">
         <h2>현재 문제 컨트롤</h2>
         {current ? (
           <div className="question-detail">
@@ -174,7 +183,7 @@ export default function HostClient({ roomId, initialToken }: { roomId: string; i
         </div>
       </section>
 
-      <section className="host-card">
+      <section className="host-card" id="score-control">
         <h2>점수 컨트롤</h2>
         {state.teams.map((team) => (
           <div className="team-score-card" key={team.id}>
@@ -198,7 +207,7 @@ export default function HostClient({ roomId, initialToken }: { roomId: string; i
         <button className="wide" onClick={() => act("undoScore")}>마지막 점수 변경 되돌리기</button>
       </section>
 
-      <section className="host-card">
+      <section className="host-card" id="event-control">
         <h2>스틸 / 부분점수 / 이벤트</h2>
         <div className="input-row">
           <select value={eventTeam} onChange={(event) => setEventTeam(event.target.value)}>
@@ -226,7 +235,7 @@ export default function HostClient({ roomId, initialToken }: { roomId: string; i
 
       <TeamControls state={state} act={act} displayLink={displayLink} hostLink={hostLink} />
 
-      <section className="host-card">
+      <section className="host-card" id="final-control">
         <h2>Final Question</h2>
         <div className="question-detail">
           <p><b>문제:</b> {finalQuestion.q}</p>
@@ -269,7 +278,7 @@ function TeamControls({ state, act, displayLink, hostLink }: { state: PublicGame
   const csv = ["team,score", ...state.teams.map((team) => `${team.name},${team.score}`)].join("\n");
 
   return (
-    <section className="host-card">
+    <section className="host-card" id="team-control">
       <h2>팀 / 링크 / 내보내기</h2>
       {state.teams.map((team) => (
         <div className="input-row" key={team.id}>

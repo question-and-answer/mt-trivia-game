@@ -11,6 +11,10 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 button,
 input,
 select {
@@ -32,13 +36,19 @@ button:disabled {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   border: 1px solid #334155;
   border-radius: 8px;
   padding: 12px;
   background: #0f172a;
   color: #f8fafc;
+}
+
+textarea {
+  min-height: 88px;
+  resize: vertical;
 }
 
 a {
@@ -143,6 +153,72 @@ a {
 .small-note {
   color: #cbd5e1;
   margin: 0;
+}
+
+.home-editor {
+  margin-top: 24px;
+  border-top: 1px solid rgba(250, 204, 21, 0.25);
+  padding-top: 22px;
+}
+
+.home-editor h2 {
+  margin: 0 0 8px;
+  color: #facc15;
+}
+
+.home-editor > p {
+  color: #cbd5e1;
+}
+
+.editor-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(320px, 1.2fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.editor-list {
+  display: grid;
+  gap: 12px;
+  max-height: 720px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.editor-list h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  color: #facc15;
+}
+
+.editor-question-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.editor-question-row button {
+  min-height: 42px;
+  padding: 8px;
+}
+
+.editor-question-row button.selected {
+  outline: 3px solid white;
+}
+
+.editor-form {
+  display: grid;
+  gap: 12px;
+  border-radius: 8px;
+  padding: 14px;
+  background: #0f2a58;
+}
+
+.editor-form label {
+  display: grid;
+  gap: 6px;
+  color: #facc15;
+  font-weight: 800;
 }
 
 .display-screen {
@@ -397,6 +473,24 @@ a {
   font-size: 28px;
 }
 
+.host-jump-nav {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.host-jump-nav a {
+  display: grid;
+  place-items: center;
+  min-height: 38px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
 .current-question-mini {
   display: grid;
   gap: 4px;
@@ -425,6 +519,7 @@ a {
 
 .host-card {
   margin: 12px 0;
+  scroll-margin-top: 220px;
   border: 1px solid #1e3a65;
   border-radius: 8px;
   padding: 14px;
@@ -535,7 +630,8 @@ button.danger {
   }
 
   .join-row,
-  .input-row {
+  .input-row,
+  .editor-layout {
     grid-template-columns: 1fr;
   }
 }
@@ -568,6 +664,10 @@ button.danger {
 
   .quick-control-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .host-jump-nav {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .final-row {

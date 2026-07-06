@@ -67,6 +67,7 @@ export type Round = "setup" | "part1" | "part2" | "final" | "ended";
 export type GameState = {
   roomId: string;
   hostToken: string;
+  questions: Question[];
   teams: Team[];
   currentTeamIndex: number;
   currentRound: Round;

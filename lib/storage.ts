@@ -1,4 +1,5 @@
 import type { GameState } from "./types";
+import { questions } from "./questions";
 
 const memory = globalThis as typeof globalThis & {
   mtTriviaGames?: Map<string, GameState>;
@@ -18,9 +19,10 @@ export async function getGame(roomId: string): Promise<GameState | null> {
   if (hasRedis) {
     const value = await redisCommand<unknown>(["GET", key(normalized)]);
     if (!value) return null;
-    return typeof value === "string" ? JSON.parse(value) as GameState : value as GameState;
+    return normalizeGame(typeof value === "string" ? JSON.parse(value) as GameState : value as GameState);
   }
-  return memory.mtTriviaGames!.get(normalized) ?? null;
+  const game = memory.mtTriviaGames!.get(normalized) ?? null;
+  return game ? normalizeGame(game) : null;
 }
 
 export async function saveGame(state: GameState): Promise<GameState> {
@@ -32,6 +34,13 @@ export async function saveGame(state: GameState): Promise<GameState> {
     memory.mtTriviaGames!.set(normalized, next);
   }
   return next;
+}
+
+function normalizeGame(state: GameState): GameState {
+  return {
+    ...state,
+    questions: state.questions?.length ? state.questions : questions
+  };
 }
 
 export async function deleteGame(roomId: string) {

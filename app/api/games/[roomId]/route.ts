@@ -61,8 +61,22 @@ function reduceAction(state: GameState, action: string, body: Record<string, unk
   if (action === "startFinal") return setRound(state, "final");
   if (action === "endGame") return setRound(calculateWinner(state), "ended");
   if (action === "setRound") return setRound(state, body.round as Round);
-  if (action === "nextTeam") return moveTeam(state, 1);
-  if (action === "previousTeam") return moveTeam(state, -1);
+  if (action === "nextTeam") {
+    return {
+      ...moveTeam(state, 1),
+      openedQuestionId: undefined,
+      revealedAnswer: false,
+      gameMessage: undefined
+    };
+  }
+  if (action === "previousTeam") {
+    return {
+      ...moveTeam(state, -1),
+      openedQuestionId: undefined,
+      revealedAnswer: false,
+      gameMessage: undefined
+    };
+  }
   if (action === "selectQuestion") return touch({ ...state, selectedQuestionId: String(body.questionId), gameMessage: undefined });
   if (action === "openQuestion") {
     const questionId = String(body.questionId ?? state.selectedQuestionId ?? "");
@@ -77,6 +91,26 @@ function reduceAction(state: GameState, action: string, body: Record<string, unk
   if (action === "markUnused") {
     const questionId = String(body.questionId ?? state.openedQuestionId ?? state.selectedQuestionId);
     return touch({ ...state, usedQuestionIds: state.usedQuestionIds.filter((id) => id !== questionId) });
+  }
+  if (action === "updateQuestion") {
+    const questionId = String(body.questionId ?? "");
+    const patch = body.question as Record<string, unknown>;
+    return touch({
+      ...state,
+      questions: state.questions.map((question) =>
+        question.id === questionId
+          ? {
+              ...question,
+              q: String(patch.q ?? question.q),
+              a: String(patch.a ?? question.a),
+              points: Number(patch.points ?? question.points),
+              image: String(patch.image ?? question.image ?? "").trim() || undefined,
+              explanation: String(patch.explanation ?? question.explanation ?? "").trim() || undefined,
+              hostNote: String(patch.hostNote ?? question.hostNote ?? "").trim() || undefined
+            }
+          : question
+      )
+    });
   }
   if (action === "updateTeams") {
     const names = body.names as Record<string, string>;
@@ -126,7 +160,7 @@ function applyEvent(state: GameState, body: Record<string, unknown>) {
   const event = String(body.event ?? "none") as QuestionEvent;
   const teamId = String(body.teamId ?? state.teams[state.currentTeamIndex]?.id);
   const targetTeamId = String(body.targetTeamId ?? "");
-  const amount = Number(body.amount || getQuestion(state.openedQuestionId)?.bonusPoints || 0);
+  const amount = Number(body.amount || findStateQuestion(state, state.openedQuestionId)?.bonusPoints || 0);
   const team = state.teams.find((item) => item.id === teamId);
 
   if (event === "score_swap" && targetTeamId) {
@@ -147,7 +181,12 @@ function applyEvent(state: GameState, body: Record<string, unknown>) {
   if (event === "reset_score" && team) return editScore({ ...state, gameMessage: undefined }, teamId, 0);
   if (event === "bonus" || event === "laptop_lender_bonus" || event === "performance_bonus") return updateScore(state, teamId, amount || 300, event);
   if (event === "penalty" || event === "mine") return updateScore(state, teamId, -(amount || 300), event);
-  if (event === "steal_points") return updateScore(state, teamId, Math.floor((getQuestion(state.openedQuestionId)?.points ?? 0) / 2), event);
+  if (event === "steal_points") return updateScore(state, teamId, Math.floor((findStateQuestion(state, state.openedQuestionId)?.points ?? 0) / 2), event);
   if (event === "double_points") return touch({ ...state, gameMessage: eventMessage(event, team?.name, amount) });
   return touch({ ...state, gameMessage: eventMessage(event, team?.name, amount) });
+}
+
+function findStateQuestion(state: GameState, questionId?: string) {
+  if (!questionId) return undefined;
+  return state.questions.find((question) => question.id === questionId) ?? getQuestion(questionId);
 }

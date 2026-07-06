@@ -1,10 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { categories } from "@/lib/questions";
+import type { PublicGameState, Question } from "@/lib/types";
 
 type CreatedGame = {
   roomId: string;
   hostToken: string;
+  state: PublicGameState;
 };
 
 export default function HomePage() {
@@ -24,7 +27,7 @@ export default function HomePage() {
     setBusy(true);
     const response = await fetch("/api/games", { method: "POST" });
     const data = await response.json();
-    setCreated({ roomId: data.roomId, hostToken: data.hostToken });
+    setCreated({ roomId: data.roomId, hostToken: data.hostToken, state: data.state });
     setBusy(false);
   }
 
@@ -73,7 +76,102 @@ export default function HomePage() {
             <p className="small-note">휴대폰 카메라로 QR을 스캔하면 진행자 화면이 열립니다.</p>
           </div>
         )}
+
+        {created && <QuestionQuickEditor created={created} onChange={setCreated} />}
       </section>
     </main>
+  );
+}
+
+function QuestionQuickEditor({ created, onChange }: { created: CreatedGame; onChange: (game: CreatedGame) => void }) {
+  const [selectedId, setSelectedId] = useState(created.state.questions[0]?.id ?? "");
+  const selected = created.state.questions.find((question) => question.id === selectedId);
+  const [draft, setDraft] = useState<Partial<Question>>(selected ?? {});
+  const [message, setMessage] = useState("");
+
+  function selectQuestion(questionId: string) {
+    const question = created.state.questions.find((item) => item.id === questionId);
+    setSelectedId(questionId);
+    setDraft(question ?? {});
+    setMessage("");
+  }
+
+  async function saveQuestion() {
+    if (!selected) return;
+    const response = await fetch(`/api/games/${created.roomId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-host-token": created.hostToken },
+      body: JSON.stringify({
+        action: "updateQuestion",
+        questionId: selected.id,
+        question: draft
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      setMessage(data.error ?? "저장 실패");
+      return;
+    }
+    onChange({ ...created, state: data.state });
+    setMessage("저장 완료");
+  }
+
+  return (
+    <section className="home-editor">
+      <h2>문제 빠른 수정</h2>
+      <p>이 방에서만 적용됩니다. 사진은 `public/images`에 넣고 `/images/파일명.jpg`로 적으세요.</p>
+      <div className="editor-layout">
+        <div className="editor-list">
+          {categories.map((category) => (
+            <div key={category.id}>
+              <h3>{category.name}</h3>
+              <div className="editor-question-row">
+                {created.state.questions
+                  .filter((question) => question.categoryId === category.id)
+                  .map((question, index) => (
+                    <button
+                      className={question.id === selectedId ? "selected" : ""}
+                      key={question.id}
+                      onClick={() => selectQuestion(question.id)}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        {selected && (
+          <div className="editor-form">
+            <label>
+              점수
+              <input type="number" step={50} value={Number(draft.points ?? selected.points)} onChange={(event) => setDraft({ ...draft, points: Number(event.target.value) })} />
+            </label>
+            <label>
+              문제
+              <textarea value={String(draft.q ?? selected.q)} onChange={(event) => setDraft({ ...draft, q: event.target.value })} />
+            </label>
+            <label>
+              정답
+              <textarea value={String(draft.a ?? selected.a)} onChange={(event) => setDraft({ ...draft, a: event.target.value })} />
+            </label>
+            <label>
+              사진 경로
+              <input value={String(draft.image ?? selected.image ?? "")} onChange={(event) => setDraft({ ...draft, image: event.target.value })} placeholder="/images/example.jpg" />
+            </label>
+            <label>
+              해설
+              <textarea value={String(draft.explanation ?? selected.explanation ?? "")} onChange={(event) => setDraft({ ...draft, explanation: event.target.value })} />
+            </label>
+            <label>
+              호스트 노트
+              <textarea value={String(draft.hostNote ?? selected.hostNote ?? "")} onChange={(event) => setDraft({ ...draft, hostNote: event.target.value })} />
+            </label>
+            <button onClick={saveQuestion}>이 문제 저장</button>
+            {message && <p className="small-note">{message}</p>}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { categories, getCategoryName, getQuestion, questions } from "@/lib/questions";
+import { categories, getCategoryName } from "@/lib/questions";
 import type { PublicGameState } from "@/lib/types";
 
 export default function DisplayClient({ roomId }: { roomId: string }) {
@@ -33,13 +33,13 @@ export default function DisplayClient({ roomId }: { roomId: string }) {
     };
   }, [roomId]);
 
-  const opened = getQuestion(state?.openedQuestionId);
+  const opened = state?.questions.find((question) => question.id === state.openedQuestionId);
   const winner = state?.teams.find((team) => team.id === state.winnerTeamId);
   const currentTeam = state?.teams[state.currentTeamIndex];
   const board = useMemo(() => categories.map((category) => ({
     category,
-    items: questions.filter((question) => question.categoryId === category.id)
-  })), []);
+    items: (state?.questions ?? []).filter((question) => question.categoryId === category.id)
+  })), [state?.questions]);
 
   if (!state) {
     return (
