@@ -19,10 +19,17 @@ import type { GameState, QuestionEvent, Round } from "@/lib/types";
 type Context = { params: Promise<{ roomId: string }> };
 
 export async function GET(_request: NextRequest, context: Context) {
-  const { roomId } = await context.params;
-  const game = await getGame(roomId);
-  if (!game) return NextResponse.json({ error: "Game not found" }, { status: 404 });
-  return NextResponse.json({ state: publicState(game) });
+  try {
+    const { roomId } = await context.params;
+    const game = await getGame(roomId);
+    if (!game) return NextResponse.json({ error: "Game not found" }, { status: 404 });
+    return NextResponse.json({ state: publicState(game) });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to load game" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: NextRequest, context: Context) {

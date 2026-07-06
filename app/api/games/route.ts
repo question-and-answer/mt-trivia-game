@@ -3,10 +3,17 @@ import { createInitialGame, publicState } from "@/lib/game";
 import { saveGame } from "@/lib/storage";
 
 export async function POST() {
-  const game = await saveGame(createInitialGame());
-  return NextResponse.json({
-    roomId: game.roomId,
-    hostToken: game.hostToken,
-    state: publicState(game)
-  });
+  try {
+    const game = await saveGame(createInitialGame());
+    return NextResponse.json({
+      roomId: game.roomId,
+      hostToken: game.hostToken,
+      state: publicState(game)
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to create game" },
+      { status: 500 }
+    );
+  }
 }

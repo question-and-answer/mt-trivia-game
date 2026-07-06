@@ -6,14 +6,23 @@ import type { PublicGameState } from "@/lib/types";
 
 export default function DisplayClient({ roomId }: { roomId: string }) {
   const [state, setState] = useState<PublicGameState | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     let active = true;
     async function load() {
-      const response = await fetch(`/api/games/${roomId}`, { cache: "no-store" });
-      if (response.ok && active) {
-        const data = await response.json();
-        setState(data.state);
+      try {
+        const response = await fetch(`/api/games/${roomId}`, { cache: "no-store" });
+        const data = await response.json().catch(() => ({}));
+        if (!active) return;
+        if (response.ok) {
+          setState(data.state);
+          setError("");
+        } else {
+          setError(data.error ?? `HTTP ${response.status}`);
+        }
+      } catch {
+        if (active) setError("네트워크 연결 실패");
       }
     }
     load();
@@ -33,7 +42,13 @@ export default function DisplayClient({ roomId }: { roomId: string }) {
   })), []);
 
   if (!state) {
-    return <main className="display-screen"><div className="display-loading">게임 불러오는 중</div></main>;
+    return (
+      <main className="display-screen">
+        <div className="display-loading">
+          {error ? `게임을 불러올 수 없습니다: ${error}` : "게임 불러오는 중"}
+        </div>
+      </main>
+    );
   }
 
   if (state.currentRound === "ended" || winner) {

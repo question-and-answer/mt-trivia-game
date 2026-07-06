@@ -9,6 +9,7 @@ const dangerous = new Set(["resetGame", "resetScores", "endGame", "calculateFina
 export default function HostClient({ roomId, initialToken }: { roomId: string; initialToken: string }) {
   const [token, setToken] = useState(initialToken);
   const [state, setState] = useState<PublicGameState | null>(null);
+  const [loadError, setLoadError] = useState("");
   const [custom, setCustom] = useState<Record<string, number>>({});
   const [manual, setManual] = useState<Record<string, number>>({});
   const [bets, setBets] = useState<Record<string, number>>({});
@@ -24,13 +25,21 @@ export default function HostClient({ roomId, initialToken }: { roomId: string; i
   useEffect(() => {
     let active = true;
     async function load() {
-      const response = await fetch(`/api/games/${roomId}`, { cache: "no-store" });
-      if (response.ok && active) {
-        const data = await response.json();
-        setState(data.state);
-        setBets((current) => Object.keys(current).length ? current : data.state.finalBets);
-        setEventTeam((current) => current || data.state.teams[0]?.id || "");
-        setEventTarget((current) => current || data.state.teams[1]?.id || "");
+      try {
+        const response = await fetch(`/api/games/${roomId}`, { cache: "no-store" });
+        const data = await response.json().catch(() => ({}));
+        if (!active) return;
+        if (response.ok) {
+          setState(data.state);
+          setLoadError("");
+          setBets((current) => Object.keys(current).length ? current : data.state.finalBets);
+          setEventTeam((current) => current || data.state.teams[0]?.id || "");
+          setEventTarget((current) => current || data.state.teams[1]?.id || "");
+        } else {
+          setLoadError(data.error ?? `HTTP ${response.status}`);
+        }
+      } catch {
+        if (active) setLoadError("네트워크 연결 실패");
       }
     }
     load();
@@ -70,7 +79,13 @@ export default function HostClient({ roomId, initialToken }: { roomId: string; i
   })), []);
 
   if (!state) {
-    return <main className="host-shell"><div className="host-card">게임 불러오는 중</div></main>;
+    return (
+      <main className="host-shell">
+        <div className="host-card">
+          {loadError ? `게임을 불러올 수 없습니다: ${loadError}` : "게임 불러오는 중"}
+        </div>
+      </main>
+    );
   }
 
   return (
