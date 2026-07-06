@@ -103,11 +103,11 @@ export default function DisplayClient({ roomId }: { roomId: string }) {
         {board.map(({ category, items }) => (
           <div className="board-column" key={category.id}>
             <h2>{category.name}</h2>
-            {items.map((question) => {
+            {items.map((question, index) => {
               const used = state.usedQuestionIds.includes(question.id);
               return (
                 <div className={`tile ${used ? "used" : ""}`} key={question.id}>
-                  {question.points}
+                  {index + 1}
                 </div>
               );
             })}

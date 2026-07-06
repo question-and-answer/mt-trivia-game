@@ -103,6 +103,12 @@ export default function HostClient({ roomId, initialToken }: { roomId: string; i
           <div className="current-question-mini">
             <span>{getCategoryName(current.categoryId)} · {current.points || "FINAL"}점</span>
             <b>{current.q}</b>
+            <div className="quick-control-row">
+              <button onClick={() => act("openQuestion", { questionId: current.id })}>문제 띄우기</button>
+              <button onClick={() => act("revealAnswer")}>정답 공개</button>
+              <button onClick={() => act("closeQuestion")}>닫기</button>
+              <button onClick={() => act("markUsed", { questionId: current.id })}>사용</button>
+            </div>
           </div>
         )}
       </section>
@@ -135,9 +141,9 @@ export default function HostClient({ roomId, initialToken }: { roomId: string; i
                   <button
                     className={`${state.usedQuestionIds.includes(question.id) ? "used" : ""} ${state.selectedQuestionId === question.id ? "selected" : ""}`}
                     key={question.id}
-                    onClick={() => act("selectQuestion", { questionId: question.id })}
+                    onClick={() => act("openQuestion", { questionId: question.id })}
                   >
-                    {question.points}
+                    {indexLabel(question.id)} · {question.points}
                   </button>
                 ))}
               </div>
@@ -290,4 +296,9 @@ function roundLabel(round: PublicGameState["currentRound"]) {
   if (round === "final") return "Final";
   if (round === "ended") return "Ended";
   return "Setup";
+}
+
+function indexLabel(questionId: string) {
+  const [, index] = questionId.split("-");
+  return index ?? questionId;
 }

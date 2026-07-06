@@ -410,6 +410,19 @@ a {
   font-weight: 800;
 }
 
+.quick-control-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.quick-control-row button {
+  min-height: 46px;
+  padding: 10px 8px;
+  font-size: 14px;
+}
+
 .host-card {
   margin: 12px 0;
   border: 1px solid #1e3a65;
@@ -455,6 +468,11 @@ button.danger {
 
 .question-buttons {
   grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.question-buttons button {
+  padding: 10px 6px;
+  font-size: 15px;
 }
 
 .question-buttons button.used {
@@ -546,6 +564,10 @@ button.danger {
 
   .button-grid {
     grid-template-columns: 1fr;
+  }
+
+  .quick-control-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .final-row {
